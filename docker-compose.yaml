@@ -1,0 +1,26 @@
+services:
+  # local stack container for local testing of AWS services
+  # intialises with localscript-setup.sh
+  localstack:
+    container_name: "localstack"
+    image: localstack/localstack:3.4
+    ports:
+      - "127.0.0.1:4566:4566"            # LocalStack Gateway
+      - "127.0.0.1:4510-4559:4510-4559"  # external services port range
+    environment:
+      - SERVICES=s3,sqs,dynamodb
+      - DEBUG=${DEBUG:-0}
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./bin/localstack-setup.sh:/etc/localstack/init/ready.d/init-aws.sh"
+      - "./bin/send_message.sh:/var/lib/localstack/send_message.sh"
+      - "./bin/clear_dynamodb.sh:/var/lib/localstack/clear_dynamodb.sh"
+      - "./test_data/ingestion:/var/lib/localstack/ingestion"
+      - "./test_data/timeseriesprocessor:/var/lib/localstack/timeseriesprocessor"
+    profiles:
+      - localstack
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566"]
+      interval: 10s
+      timeout: 5s
+      retries: 2
